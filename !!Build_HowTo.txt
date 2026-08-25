@@ -1,0 +1,54 @@
+** This content is for the Windows environment **
+
+1. Please install STM32CubeCLT.
+   https://www.st.com/en/development-tools/stm32cubeclt.html
+
+2. Please open the Command Prompt.
+
+3. Please add the folder containing "cmake.exe" to the PATH environment variable.
+   ex) SET PATH=x:\yyy\***\zzz\CMake\bin;%PATH%
+
+4. Please add the folder containing "ninja.exe" to the PATH environment variable.
+   ex) SET PATH=x:\yyy\***\zzz\Ninja\bin;%PATH%
+
+5. Please add the folder containing "starm-clang.exe" to the PATH environment variable.
+   ex) SET PATH=x:\yyy\***\zzz\st-arm-clang\bin;%PATH%
+
+6. Please chdir to the project's top-level folder (the folder containing THIS file).
+   ex) cd /d x:\some\***\path\042KPD
+
+7. Please generate the Ninja configuration and input file using CMake. (You only need to do this ONCE.)
+   ex) cmake -S . -B build --toolchain cmake\starm-clang.cmake -G Ninja
+
+8. Please chdir to the build folder.
+   ex) cd build
+
+9. Please build the project with Ninja.
+   ex) ninja
+
+10. If the "042KPD.elf" file has been created, the build was successful.
+
+11. If you press and hold the mode button while connected to the host via USB,
+    the keypad enters device firmware update mode.
+
+12. You can flash the firmware to the keypad using STM32CubeProgrammer
+    when the keypad is in device firmware update mode. (Select USB as the target interface.)
+    https://www.st.com/en/development-tools/stm32cubeprog.html
+
+14. If you have trouble updating the device firmware via USB, try placing a USB hub between
+    the host and the keypad. (There are no issues when using the keypad as a keypad.)
+    The following is an excerpt from ST's AN2606 Rev 70, page 101.
+    https://www.st.com/resource/en/application_note/an2606-introduction-to-system-memory-boot-mode-on-stm32-mcus-stmicroelectronics.pdf
+– USB bootloader fails on some machines using a high speed controller. The bootloader
+  is detected. but then data transaction fails.
+  Root causes:
+  De-synchronization between USB controller and bootloader SW due to the controller
+  high speed transactions. Controller high speed inter-packet delay seems not sufficient
+  for the bootloader SW (based on interrupt routines) to serve all needed transactions
+  (the delay needed by the BL is nearly 25 μs). Some servicing IT are missed. This
+  results in a communication fail, causing Write command to fail.
+  Workarounds:
+  Add USB HUB between host and the MCU. This relaxes transactions inter-packet
+  delay, and allows the BL SW to perform correctly the task. Use USB controller/host that
+  increase inter-packet delay.
+  On new designs, use DFU SW that fix the issue in user flash memory.
