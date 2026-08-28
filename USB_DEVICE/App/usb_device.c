@@ -56,6 +56,10 @@ USBD_HandleTypeDef hUsbDeviceFS;
 
 /* USER CODE END 1 */
 
+#ifndef	__FILE_NAME__
+#define	__FILE_NAME__	__FILE__
+#endif	///	!__FILE_NAME__
+
 /**
  * Init USB device Library, add supported class and start the library
  * @retval None

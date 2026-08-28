@@ -159,6 +159,10 @@ void HAL_PCD_SOFCallback(PCD_HandleTypeDef *hpcd)
 	USBD_LL_SOF((USBD_HandleTypeDef *)hpcd->pData);
 }
 
+#ifndef	__FILE_NAME__
+#define	__FILE_NAME__	__FILE__
+#endif	///	!__FILE_NAME__
+
 /**
  * @brief  Reset callback.
  * @param  hpcd: PCD handle

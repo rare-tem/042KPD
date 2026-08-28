@@ -60,16 +60,23 @@ uint8_t 	codeTable[3][12] = {
 		0xe0, 0x52, 0xe1,		///	Lctrl  ↑      Lshift
 		0x50, 0x51, 0x4f	},	///	←      ↓      →
 
-	{	0x24, 0x25, 0x26,		///	7      8      9
-		0x21, 0x22, 0x23,		///	4      5      6
-		0x1e, 0x1f, 0x20,		///	1      2      3
-		0x27, 0x2a, 0x28	},	///	0      Bspace Enter
+	{	0x24, 0x25, 0x26,		///	7&     8*     9(
+		0x21, 0x22, 0x23,		///	4$     5%     6^
+		0x1e, 0x1f, 0x20,		///	1!     2@     3#
+		0x27, 0x2a, 0x28	},	///	0)     Bspace Enter
 
 	{	0x43, 0x44, 0x45,		///	F10    F11    F12
 		0x40, 0x41, 0x42,		///	F7     F8     F9
 		0x3d, 0x3e, 0x3f,		///	F4     F5     F6
 		0x3a, 0x3b, 0x3c	},	///	F1     F2     F3
 };
+
+volatile	uint8_t 	usbSOFflag,	///	++ed in USB SOF (USBD_LL_SOF() in usbd_core.c)
+						lockLED;	///	Num Lock, Caps Lock, Scroll Lock, ... (USBD_HID_Init(), usbdHIDdataOut() in usbd_hid.c)
+uint8_t 	u8, v8, prevLled, scanline, kbuf[12], mbuf, keyMode, usartBuf[16];
+uint16_t	keyStat, prevKstat;
+uint32_t	sysID, eTme;
+uint64_t	reportBuff;
 
 /* USER CODE END PV */
 
@@ -81,12 +88,7 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-volatile	uint8_t 	usbSOFflag,	///	++ed in USB SOF (USBD_LL_SOF() in usbd_core.c)
-						lockLED;	///	Num Lock, Caps Lock, Scroll Lock, ... (USBD_HID_Init(), usbdHIDdataOut() in usbd_hid.c)
-uint8_t 	u8, v8, prevLled, scanline, kbuf[12], mbuf, keyMode, curStat[16];
-uint16_t	keyStat, prevKstat;
-uint32_t	sysID;
-uint64_t	reportBuff;
+
 /* USER CODE END 0 */
 
 /**
@@ -117,7 +119,7 @@ int main(void)
 	/* USER CODE END SysInit */
 
 	/* Initialize all configured peripherals */
-	MX_GPIO_Init();
+	MX_GPIO_Init();	///	All LEDs ON, Prepare for first scan
 
 	__HAL_RCC_DMA1_CLK_ENABLE();	///MX_DMA_Init();
 	MX_USART2_UART_Init();
@@ -142,15 +144,18 @@ int main(void)
 	/* USER CODE BEGIN 2 */
 	LL_GPIO_SetOutputPin(PF0_OSC_IN_LED2_odout_GPIO_Port, PF0_OSC_IN_LED2_odout_Pin);	///	LED2 off
 	LL_GPIO_SetOutputPin(PA14_LED3_odout_GPIO_Port, PA14_LED3_odout_Pin);	///	LED3 off
-	curStat[1] = curStat[8] = curStat[15] = ' ';
+	usartBuf[1] = usartBuf[8] = usartBuf[15] = ' ';
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
-	while (1)
+	while (hUsbDeviceFS.dev_state != USBD_STATE_DEFAULT)
 	{
-		while (!usbSOFflag)
-			__NOP();
+		for (eTme = 0; !usbSOFflag; )
+			if (eTme >= 0x400000)
+				LL_GPIO_SetOutputPin(PA13_LED4_odout_GPIO_Port, PA13_LED4_odout_Pin);
+			else
+				eTme++;
 		/* USER CODE END WHILE */
 
 		usbSOFflag--;
@@ -160,21 +165,21 @@ int main(void)
 		if (prevLled != lockLED && !(DMA1_Channel4->CNDTR))
 		{
 			///	Notifies the status of the lock LEDs via USART2
-			curStat[0] =
-			curStat[2] =
-			curStat[3] =
-			curStat[13] =
-			curStat[14] = ' ';
+			usartBuf[0] =
+			usartBuf[2] =
+			usartBuf[3] =
+			usartBuf[13] =
+			usartBuf[14] = ' ';
 
-			curStat[4] = (lockLED & (1 << 0)) ? '+' : '_';	///	Num lock
-			curStat[5] = (lockLED & (1 << 1)) ? '+' : '_';	///	Caps lock
-			curStat[6] = (lockLED & (1 << 2)) ? '+' : '_';	///	Scroll lock
-			curStat[7] = (lockLED & (1 << 3)) ? '+' : '_';
-			curStat[9] = (lockLED & (1 << 4)) ? '+' : '_';
-			curStat[10] = (lockLED & (1 << 5)) ? '+' : '_';
-			curStat[11] = (lockLED & (1 << 6)) ? '+' : '_';
-			curStat[12] = (lockLED & (1 << 7)) ? '+' : '_';
-			usart2xmitDMA(curStat, 16);
+			usartBuf[4] = (lockLED & (1 << 0)) ? '#' : '~';	///	Num lock
+			usartBuf[5] = (lockLED & (1 << 1)) ? '#' : '~';	///	Caps lock
+			usartBuf[6] = (lockLED & (1 << 2)) ? '#' : '~';	///	Scroll lock
+			usartBuf[7] = (lockLED & (1 << 3)) ? '#' : '~';
+			usartBuf[9] = (lockLED & (1 << 4)) ? '#' : '~';
+			usartBuf[10] = (lockLED & (1 << 5)) ? '#' : '~';
+			usartBuf[11] = (lockLED & (1 << 6)) ? '#' : '~';
+			usartBuf[12] = (lockLED & (1 << 7)) ? '#' : '~';
+			usart2xmitDMA(usartBuf, 16);
 
 			prevLled = lockLED;
 		}
@@ -402,20 +407,23 @@ int main(void)
 			if (!(DMA1_Channel4->CNDTR))
 			{
 				///	Reports the status of the keys to USART2
-				curStat[0] = (keyStat & 0x8000) ? '*' : '-';	///	Mode button
-				curStat[2] = (keyStat & (1 << 0)) ? '0' : '-';
-				curStat[3] = (keyStat & (1 << 1)) ? '1' : '-';
-				curStat[4] = (keyStat & (1 << 2)) ? '2' : '-';
-				curStat[5] = (keyStat & (1 << 3)) ? '3' : '-';
-				curStat[6] = (keyStat & (1 << 4)) ? '4' : '-';
-				curStat[7] = (keyStat & (1 << 5)) ? '5' : '-';
-				curStat[9] = (keyStat & (1 << 6)) ? '6' : '-';
-				curStat[10] = (keyStat & (1 << 7)) ? '7' : '-';
-				curStat[11] = (keyStat & (1 << 8)) ? '8' : '-';
-				curStat[12] = (keyStat & (1 << 9)) ? '9' : '-';
-				curStat[13] = (keyStat & (1 << 10)) ? 'A' : '-';
-				curStat[14] = (keyStat & (1 << 11)) ? 'B' : '-';
-				usart2xmitDMA(curStat, 16);
+				if (u8 < 12)	///	Phantom state
+					usartBuf[0] = (keyStat & 0x8000) ? '@' : '=';	///	Mode button
+				else
+					usartBuf[0] = (keyStat & 0x8000) ? '*' : '-';	///	Mode button
+				usartBuf[2] = (keyStat & (1 << 0)) ? '0' : '-';
+				usartBuf[3] = (keyStat & (1 << 1)) ? '1' : '-';
+				usartBuf[4] = (keyStat & (1 << 2)) ? '2' : '-';
+				usartBuf[5] = (keyStat & (1 << 3)) ? '3' : '-';
+				usartBuf[6] = (keyStat & (1 << 4)) ? '4' : '-';
+				usartBuf[7] = (keyStat & (1 << 5)) ? '5' : '-';
+				usartBuf[9] = (keyStat & (1 << 6)) ? '6' : '-';
+				usartBuf[10] = (keyStat & (1 << 7)) ? '7' : '-';
+				usartBuf[11] = (keyStat & (1 << 8)) ? '8' : '-';
+				usartBuf[12] = (keyStat & (1 << 9)) ? '9' : '-';
+				usartBuf[13] = (keyStat & (1 << 10)) ? 'A' : '-';
+				usartBuf[14] = (keyStat & (1 << 11)) ? 'B' : '-';
+				usart2xmitDMA(usartBuf, 16);
 			}
 
 			prevKstat = keyStat;
@@ -484,7 +492,6 @@ void SystemClock_Config(void)
 /* USER CODE END 4 */
 
 static	uint16_t	errLen;
-static	uint32_t	errTme;
 static	const	char	*errMsg;
 
 /**
@@ -511,9 +518,9 @@ void Error_Handler(const char *errWhere)
 	if (errLen && !(DMA1_Channel4->CNDTR))
 		usart2xmitDMA(errWhere, errLen);
 
-	while (1)
+	for (eTme = 0; ; )
 	{
-		if (!(++errTme & 0x1fffff))
+		if (!(++eTme & 0x1fffff))
 		{
 			LL_GPIO_TogglePin(GPIOF,
 					PF1_OSC_OUT_LED1_odout_Pin | PF0_OSC_IN_LED2_odout_Pin);

@@ -301,6 +301,11 @@ extern "C"
 #endif /* HAL_WWDG_MODULE_ENABLED */
 
 /* Exported macro ------------------------------------------------------------*/
+
+#ifndef	__FILE_NAME__
+#define	__FILE_NAME__	__FILE__
+#endif	///	!__FILE_NAME__
+
 #ifdef USE_FULL_ASSERT
 	/**
 	 * @brief  The assert_param macro is used for function's parameters check.
