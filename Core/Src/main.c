@@ -63,7 +63,7 @@ uint8_t 	codeTable[3][12] = {
 	{	0x24, 0x25, 0x26,		///	7&     8*     9(
 		0x21, 0x22, 0x23,		///	4$     5%     6^
 		0x1e, 0x1f, 0x20,		///	1!     2@     3#
-		0x27, 0x2a, 0x28	},	///	0)     Bspace Enter
+		0x2a, 0x27, 0x28	},	///	BkSp   0)     Enter
 
 	{	0x43, 0x44, 0x45,		///	F10    F11    F12
 		0x40, 0x41, 0x42,		///	F7     F8     F9
@@ -97,28 +97,27 @@ void SystemClock_Config(void);
  */
 int main(void)
 {
+/* USER CODE BEGIN 1 */
 
-	/* USER CODE BEGIN 1 */
+/* USER CODE END 1 */
 
-	/* USER CODE END 1 */
+/* MCU Configuration--------------------------------------------------------*/
 
-	/* MCU Configuration--------------------------------------------------------*/
-
-	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
 	HAL_Init();
 
-	/* USER CODE BEGIN Init */
+/* USER CODE BEGIN Init */
 
-	/* USER CODE END Init */
+/* USER CODE END Init */
 
-	/* Configure the system clock */
+/* Configure the system clock */
 	SystemClock_Config();
 
-	/* USER CODE BEGIN SysInit */
+/* USER CODE BEGIN SysInit */
 	SysTick->CTRL = 0;	///	Disable sysTick
-	/* USER CODE END SysInit */
+/* USER CODE END SysInit */
 
-	/* Initialize all configured peripherals */
+/* Initialize all configured peripherals */
 	MX_GPIO_Init();	///	All LEDs ON, Prepare for first scan
 
 	__HAL_RCC_DMA1_CLK_ENABLE();	///MX_DMA_Init();
@@ -141,14 +140,14 @@ int main(void)
 	while (hUsbDeviceFS.dev_state != USBD_STATE_CONFIGURED)
 		__NOP();
 
-	/* USER CODE BEGIN 2 */
+/* USER CODE BEGIN 2 */
 	LL_GPIO_SetOutputPin(PF0_OSC_IN_LED2_odout_GPIO_Port, PF0_OSC_IN_LED2_odout_Pin);	///	LED2 off
 	LL_GPIO_SetOutputPin(PA14_LED3_odout_GPIO_Port, PA14_LED3_odout_Pin);	///	LED3 off
 	usartBuf[1] = usartBuf[8] = usartBuf[15] = ' ';
-	/* USER CODE END 2 */
+/* USER CODE END 2 */
 
-	/* Infinite loop */
-	/* USER CODE BEGIN WHILE */
+/* Infinite loop */
+/* USER CODE BEGIN WHILE */
 	while (hUsbDeviceFS.dev_state != USBD_STATE_DEFAULT)
 	{
 		for (eTme = 0; !usbSOFflag; )
@@ -156,7 +155,7 @@ int main(void)
 				LL_GPIO_SetOutputPin(PA13_LED4_odout_GPIO_Port, PA13_LED4_odout_Pin);
 			else
 				eTme++;
-		/* USER CODE END WHILE */
+/* USER CODE END WHILE */
 
 		usbSOFflag--;
 		LL_GPIO_TogglePin(PA13_LED4_odout_GPIO_Port, PA13_LED4_odout_Pin);
@@ -429,7 +428,7 @@ int main(void)
 			prevKstat = keyStat;
 		}
 
-		/* USER CODE BEGIN 3 */
+/* USER CODE BEGIN 3 */
 	}
 
 	__NOP();
@@ -442,7 +441,7 @@ int main(void)
 		__NOP();
 	}
 
-	/* USER CODE END 3 */
+/* USER CODE END 3 */
 }
 
 /**
@@ -457,7 +456,7 @@ void SystemClock_Config(void)
 	}
 	LL_RCC_HSI48_Enable();
 
-	/* Wait till HSI48 is ready */
+/* Wait till HSI48 is ready */
 	while (LL_RCC_HSI48_IsReady() != 1)
 	{
 	}
@@ -465,13 +464,13 @@ void SystemClock_Config(void)
 	LL_RCC_SetAPB1Prescaler(LL_RCC_APB1_DIV_1);
 	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI48);
 
-	/* Wait till System clock is ready */
+/* Wait till System clock is ready */
 	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSI48)
 	{
 	}
 	LL_SetSystemCoreClock(48000000);
 
-	/* Update the time base */
+/* Update the time base */
 	if (HAL_InitTick(TICK_INT_PRIORITY) != HAL_OK)
 	{
 		Error_Handler(NULL);
@@ -483,7 +482,7 @@ void SystemClock_Config(void)
 	LL_CRS_SetFreqErrorLimit(34);
 	LL_CRS_SetHSI48SmoothTrimming(32);
 
-	/* Select SysTick source clock */
+/* Select SysTick source clock */
 	LL_SYSTICK_SetClkSource(LL_SYSTICK_CLKSOURCE_HCLK_DIV8);
 }
 
@@ -500,8 +499,8 @@ static	const	char	*errMsg;
  */
 void Error_Handler(const char *errWhere)
 {
-	/* USER CODE BEGIN Error_Handler_Debug */
-	/* User can add his own implementation to report the HAL error return state */
+/* USER CODE BEGIN Error_Handler_Debug */
+/* User can add his own implementation to report the HAL error return state */
 	__disable_irq();
 
 	LL_GPIO_ResetOutputPin(GPIOF,
@@ -531,7 +530,7 @@ void Error_Handler(const char *errWhere)
 				usart2xmitDMA(errWhere, errLen);
 		}
 	}
-	/* USER CODE END Error_Handler_Debug */
+/* USER CODE END Error_Handler_Debug */
 }
 #ifdef USE_FULL_ASSERT
 /**
@@ -543,9 +542,9 @@ void Error_Handler(const char *errWhere)
  */
 void assert_failed(uint8_t *file, uint32_t line)
 {
-	/* USER CODE BEGIN 6 */
-	/* User can add his own implementation to report the file name and line number,
-	   ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-	/* USER CODE END 6 */
+/* USER CODE BEGIN 6 */
+/* User can add his own implementation to report the file name and line number,
+   ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+/* USER CODE END 6 */
 }
-#endif /* USE_FULL_ASSERT */
+#endif	/* USE_FULL_ASSERT */

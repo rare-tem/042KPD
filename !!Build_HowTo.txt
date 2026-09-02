@@ -28,11 +28,11 @@
 
 10. If the "042KPD.elf" file has been created, the build was successful.
 
-11. If you press and hold the mode button while connected to the host via USB,
+11. If you press and hold the mode button while connecting to the host via USB,
     the keypad enters device firmware update mode.
 
 12. You can flash the firmware to the keypad using STM32CubeProgrammer
-    when the keypad is in device firmware update mode. (Select USB as the target interface.)
+    when the keypad is in device firmware update mode. (img\Select USB as the target interface.jpg)
     https://www.st.com/en/development-tools/stm32cubeprog.html
 
 14. If you have trouble updating the device firmware via USB, try placing a USB hub between
